@@ -1,11 +1,79 @@
 const express = require('express');
+const connectDB = require("./config/database");
+const app = express();
+const User = require("./models/user");
+
+//middleware to read json -> js object
+app.use(express.json()); //it will work for all routes automatically whenever json comes it will convert it to js object for all 
+
+app.post("/signup", async (req, res)=>{
+    // console.log(req.body);
+    // const userObj = {
+    //     firstName : "test",
+    //     lastName : "first",
+    //     emailId : "testfirst@gmail.com",
+    //     password : "testfirst"
+    // }
+    //now creating instance of user Model which like a new document creating a new instance of UserModel
+
+    //now it's dynamic /signup api 
+    const user = new User(req.body);
+    try{
+        await user.save(); //database will be saved
+        res.send("user added successfully");
+    }catch(err){
+        res.status(400).send("error saving the user: " + err.message);
+    }
+})
+
+app.get("/user",async (req, res)=>{
+    const userEmail = req.body.emailId;
+    try{
+        const users = await User.find({emailId: userEmail});
+        if(users.length === 0){
+            res.status(404).send("user not found");
+        }
+        else{
+            res.send(users);
+        }
+    }catch(err){
+        res.status(400).send("something went wrong");
+    }
+})
+//feed api get /feed - get all the users from the database
+app.get("/feed",async (req, res)=>{
+    try{
+        const users = await User.find(); //get's all the document or user
+        res.send(users);
+    }catch(err){
+        res.status(400).send("something went wrong");
+    }
+} )
+
+//db connection check
+connectDB().then(()=>{
+    console.log("Database connection established ...");
+}).catch((err)=>{
+    console.error("Database can't be connected!" + err);
+});
+
+
+app.listen(3000, ()=> {
+    console.log("server is listeing on port 3000 ...");
+});
+
+
+//creating POST api for user 
+
+
+
+
+
+
+
+
 // const {adminAuth} = require("./middlewares");
 // const {adminAuth, userAuth} = require("./middlewares/auth")
-
-const app = express();
-
-
-
 // handling the requests 
 // instead of app.use we will use app.get and app.post other method to handle different calls separetly
 // this will only handel get call to /user
@@ -99,24 +167,28 @@ const app = express();
 //     res.send("user is deleted");
 // })
 
-//error handling
-app.get("/getuserdata", (req, res)=>{
-    // logic of db call and get user data 
-    // but if there is some error in the code 
-    throw new Error("error happend"); //error should not be exposed like this
-    //try to write code in try and catch but still some unhandeled error
+// //error handling
+// app.use("/",(err ,req, res, next)=>{
+//     //this is wild card
+//     if(err){
+//         //we can log error in sentry and all
+//         res.status(500).send("something went wrong");
+//     }
+// })
+// app.get("/getuserdata", (req, res)=>{
+//     // logic of db call and get user data 
+//     // but if there is some error in the code 
+//     throw new Error("error happend"); //error should not be exposed like this
+//     //try to write code in try and catch but still some unhandeled error
 
-    res.send("user data sent");
-})
+//     res.send("user data sent");
+// })
 
-app.use("/",(err ,req, res, next)=>{
-    //this is wild card
-    if(err){
-        //we can log error in sentry and all
-        res.status(500).send("something went wrong");
-    }
-})
+// app.use("/",(err ,req, res, next)=>{
+//     //this is wild card
+//     if(err){
+//         //we can log error in sentry and all
+//         res.status(500).send("something went wrong");
+//     }
+// })
 
-app.listen(3000, ()=> {
-    console.log("server is listeing on port 3000 ...");
-});
