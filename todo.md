@@ -17,3 +17,12 @@
 -- connection to mongo cluster using mongoose library
 -- create userSchema and model (which provides us an interface to create documents or it's like a class whose instances are documents)
 -- /signup router
+
+----------------------------------------------------
+data sanitization  at api and schema level
+-- use validator library to check email, password, url and other data inputs
+-- don't trust REQ.BODY as it can contain malicious data
+
+---------------------------------------------------
+encrypting passwords -- bcrypt pakage and validate signup 
+

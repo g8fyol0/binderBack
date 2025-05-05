@@ -2,6 +2,8 @@ const express = require('express');
 const connectDB = require("./config/database");
 const app = express();
 const User = require("./models/user");
+const {validateSignUpData} = require("./utils/validation");
+const bcrypt = require("bcrypt");
 
 //middleware to read json -> js object
 app.use(express.json()); //it will work for all routes automatically whenever json comes it will convert it to js object for all 
@@ -17,15 +19,52 @@ app.post("/signup", async (req, res)=>{
     //now creating instance of user Model which like a new document creating a new instance of UserModel
 
     //now it's dynamic /signup api 
-    
-    const user = new User(req.body);
+
     try{
+        //validting the data
+        validateSignUpData(req);
+        //encypt the password then save the user
+        const {firstName, lastName, emailId, password} = req.body;
+        const passwordHash = await bcrypt.hash(password, 10);
+        // console.log(passwordHash);
+
+
+        const user = new User({firstName, lastName, emailId, password: passwordHash,});
         await user.save(); //database will be saved
         res.send("user added successfully");
     }catch(err){
-        res.status(400).send("error saving the user: " + err.message);
+        res.status(400).send("Error saving the user : " + err.message);
     }
 })
+
+app.post("/login", async (req, res) => {
+
+    try{
+        const {emailId, password} = req.body;
+        // if(!validator.isEmail(emailId)){
+        //     throw new Error("email id is invalid!!");
+        // }
+        //check wheterh user is present or not
+        const user = await User.findOne({emailId: emailId});
+        if(!user){
+            // throw new Error("EmailId is not present in DB"); //don't leak such DB information in DB
+            throw new Error("Invalid Credentials");
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password );
+        if(isPasswordValid){
+            res.send("Login Successfull!!!");
+        }else{
+            throw new Error("Invalid Credentials");
+        }
+
+    }catch(err){
+        res.status(400).send("Error saving the user : " + err.message);
+    }
+})
+
+
+
 
 app.get("/user",async (req, res)=>{
     const userEmail = req.body.emailId;
