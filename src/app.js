@@ -17,6 +17,7 @@ app.post("/signup", async (req, res)=>{
     //now creating instance of user Model which like a new document creating a new instance of UserModel
 
     //now it's dynamic /signup api 
+    
     const user = new User(req.body);
     try{
         await user.save(); //database will be saved
@@ -48,8 +49,53 @@ app.get("/feed",async (req, res)=>{
     }catch(err){
         res.status(400).send("something went wrong");
     }
-} )
+} );
 
+app.delete("/user", async (req, res)=>{
+    const userId = req.body.userId;
+    try{
+        const user = await User.findByIdAndDelete(userId);  //same as {_id: userId}
+        res.send("user deleted successfully");
+    }catch(err){
+        res.status(404).status("something went wrong");
+    }
+})
+
+//update the user
+app.patch("/user/:userId", async (req, res)=>{
+    const userId = req.params?.userId;
+    const data = req.body;
+
+    try{
+        const ALLOWED_UPDATES = ["photoUrl", "about", "gender", "age", "skills"];
+
+        const isUpdateAllowed = Object.keys(data).every((k) => 
+            ALLOWED_UPDATES.includes(k)
+        );
+    
+        if(!isUpdateAllowed){
+            throw new Error("update is not allowed");
+        }
+        if(data?.skills.length > 10){
+            throw new Error("skills can't be more than 10");
+        }
+        const user = await User.findByIdAndUpdate({_id : userId}, data, {returnDocument : "before", runValidators: true}); //this function will log the older version of the document
+        res.send("user updated successfully!!");
+    }catch(err){
+        res.status(400).send("Update failed" + err.message);
+    }
+});
+//update using emailID
+app.patch("/userem", async (req, res) => {
+    const userEmail = req.body.userEmail;
+    const userData = req.body;
+    try{
+        const user = await User.findOneAndUpdate({emailId: userEmail}, userData, {returnDocument : 'before', runValidators: true});
+        res.send("user updated successfully");
+    }catch(err){
+        res.status(400).send("something went wrong!!");
+    }
+})
 //db connection check
 connectDB().then(()=>{
     console.log("Database connection established ...");
