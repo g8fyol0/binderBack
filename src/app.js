@@ -4,9 +4,15 @@ const app = express();
 const User = require("./models/user");
 const {validateSignUpData} = require("./utils/validation");
 const bcrypt = require("bcrypt");
+const cookieParser = require('cookie-parser');
+const jwt = require("jsonwebtoken");
 
 //middleware to read json -> js object
 app.use(express.json()); //it will work for all routes automatically whenever json comes it will convert it to js object for all 
+//middleware to read cookie
+app.use(cookieParser());
+
+
 
 app.post("/signup", async (req, res)=>{
     // console.log(req.body);
@@ -53,11 +59,48 @@ app.post("/login", async (req, res) => {
 
         const isPasswordValid = await bcrypt.compare(password, user.password );
         if(isPasswordValid){
+            // res.cookie("token", "somerandomtokenaddedtocookie");
+            // generating token 
+            const token = jwt.sign({_id: user._id}, "serverSecretPassword");
+            // console.log(token);
+
+            res.cookie("token", token);
             res.send("Login Successfull!!!");
+            //if password is valid then we will create a jwt token and add the token to cookie and send the response to the user
+
         }else{
             throw new Error("Invalid Credentials");
         }
 
+    }catch(err){
+        res.status(400).send("Error saving the user : " + err.message);
+    }
+});
+
+app.get("/profile", async (req, res)=>{
+    try{
+        const cookie = req.cookies;
+        // console.log(cookie);
+        const {token} = cookie;
+        if(!token){
+            throw new Error("invalid token");
+        }
+
+        //validating token
+        const decodedValue = jwt.verify(token, "serverSecretPassword"); //we will get the information which are conceled
+
+        const {_id} = decodedValue;
+        const user = await User.findById(_id);
+        if(!user){
+            throw new Error("user is not valid");
+        }
+
+        res.send(user);
+
+
+
+        // console.log("logged in user is :: " + _id);  
+        // res.send("reading cookies");
     }catch(err){
         res.status(400).send("Error saving the user : " + err.message);
     }
