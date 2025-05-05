@@ -57,13 +57,12 @@ app.post("/login", async (req, res) => {
             // throw new Error("EmailId is not present in DB"); //don't leak such DB information in DB
             throw new Error("Invalid Credentials");
         }
-
-        const isPasswordValid = await bcrypt.compare(password, user.password );
+        const isPasswordValid = await user.validatePassword(password);  //offloaded to schema method
         if(isPasswordValid){
             // res.cookie("token", "somerandomtokenaddedtocookie");
             // generating token 
-            const token = jwt.sign({_id: user._id}, "serverSecretPassword", {expiresIn: "1h"}); //token expiry
-            // console.log(token);
+            //offloaded the jwt token generation to schema methods
+            const token = await user.getJWT();
 
             res.cookie("token", token, {expires: new Date(Date.now() + 8 * 3600000)}); //we can set cookie expire
             res.send("Login Successfull!!!");
