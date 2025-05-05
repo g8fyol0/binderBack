@@ -6,6 +6,7 @@ const {validateSignUpData} = require("./utils/validation");
 const bcrypt = require("bcrypt");
 const cookieParser = require('cookie-parser');
 const jwt = require("jsonwebtoken");
+const {userAuth} = require("./middlewares/auth");
 
 //middleware to read json -> js object
 app.use(express.json()); //it will work for all routes automatically whenever json comes it will convert it to js object for all 
@@ -61,10 +62,10 @@ app.post("/login", async (req, res) => {
         if(isPasswordValid){
             // res.cookie("token", "somerandomtokenaddedtocookie");
             // generating token 
-            const token = jwt.sign({_id: user._id}, "serverSecretPassword");
+            const token = jwt.sign({_id: user._id}, "serverSecretPassword", {expiresIn: "1h"}); //token expiry
             // console.log(token);
 
-            res.cookie("token", token);
+            res.cookie("token", token, {expires: new Date(Date.now() + 8 * 3600000)}); //we can set cookie expire
             res.send("Login Successfull!!!");
             //if password is valid then we will create a jwt token and add the token to cookie and send the response to the user
 
@@ -77,28 +78,10 @@ app.post("/login", async (req, res) => {
     }
 });
 
-app.get("/profile", async (req, res)=>{
+app.get("/profile", userAuth, async (req, res)=>{
     try{
-        const cookie = req.cookies;
-        // console.log(cookie);
-        const {token} = cookie;
-        if(!token){
-            throw new Error("invalid token");
-        }
-
-        //validating token
-        const decodedValue = jwt.verify(token, "serverSecretPassword"); //we will get the information which are conceled
-
-        const {_id} = decodedValue;
-        const user = await User.findById(_id);
-        if(!user){
-            throw new Error("user is not valid");
-        }
-
+        const user = req.user;
         res.send(user);
-
-
-
         // console.log("logged in user is :: " + _id);  
         // res.send("reading cookies");
     }catch(err){
@@ -106,78 +89,100 @@ app.get("/profile", async (req, res)=>{
     }
 })
 
+app.post("/sendConnectionRequest", userAuth, async (req, res)=>{
+    //sending connection request
+    const user = req.user;
+    console.log("sending a connection request");
 
-
-
-app.get("/user",async (req, res)=>{
-    const userEmail = req.body.emailId;
-    try{
-        const users = await User.find({emailId: userEmail});
-        if(users.length === 0){
-            res.status(404).send("user not found");
-        }
-        else{
-            res.send(users);
-        }
-    }catch(err){
-        res.status(400).send("something went wrong");
-    }
-})
-//feed api get /feed - get all the users from the database
-app.get("/feed",async (req, res)=>{
-    try{
-        const users = await User.find(); //get's all the document or user
-        res.send(users);
-    }catch(err){
-        res.status(400).send("something went wrong");
-    }
-} );
-
-app.delete("/user", async (req, res)=>{
-    const userId = req.body.userId;
-    try{
-        const user = await User.findByIdAndDelete(userId);  //same as {_id: userId}
-        res.send("user deleted successfully");
-    }catch(err){
-        res.status(404).status("something went wrong");
-    }
-})
-
-//update the user
-app.patch("/user/:userId", async (req, res)=>{
-    const userId = req.params?.userId;
-    const data = req.body;
-
-    try{
-        const ALLOWED_UPDATES = ["photoUrl", "about", "gender", "age", "skills"];
-
-        const isUpdateAllowed = Object.keys(data).every((k) => 
-            ALLOWED_UPDATES.includes(k)
-        );
-    
-        if(!isUpdateAllowed){
-            throw new Error("update is not allowed");
-        }
-        if(data?.skills.length > 10){
-            throw new Error("skills can't be more than 10");
-        }
-        const user = await User.findByIdAndUpdate({_id : userId}, data, {returnDocument : "before", runValidators: true}); //this function will log the older version of the document
-        res.send("user updated successfully!!");
-    }catch(err){
-        res.status(400).send("Update failed" + err.message);
-    }
+    res.send(user.firstName + " has sent a connection request!");
 });
-//update using emailID
-app.patch("/userem", async (req, res) => {
-    const userEmail = req.body.userEmail;
-    const userData = req.body;
-    try{
-        const user = await User.findOneAndUpdate({emailId: userEmail}, userData, {returnDocument : 'before', runValidators: true});
-        res.send("user updated successfully");
-    }catch(err){
-        res.status(400).send("something went wrong!!");
-    }
-})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// app.get("/user",async (req, res)=>{
+//     const userEmail = req.body.emailId;
+//     try{
+//         const users = await User.find({emailId: userEmail});
+//         if(users.length === 0){
+//             res.status(404).send("user not found");
+//         }
+//         else{
+//             res.send(users);
+//         }
+//     }catch(err){
+//         res.status(400).send("something went wrong");
+//     }
+// })
+// //feed api get /feed - get all the users from the database
+// app.get("/feed",async (req, res)=>{
+//     try{
+//         const users = await User.find(); //get's all the document or user
+//         res.send(users);
+//     }catch(err){
+//         res.status(400).send("something went wrong");
+//     }
+// } );
+
+// app.delete("/user", async (req, res)=>{
+//     const userId = req.body.userId;
+//     try{
+//         const user = await User.findByIdAndDelete(userId);  //same as {_id: userId}
+//         res.send("user deleted successfully");
+//     }catch(err){
+//         res.status(404).status("something went wrong");
+//     }
+// })
+
+// //update the user
+// app.patch("/user/:userId", async (req, res)=>{
+//     const userId = req.params?.userId;
+//     const data = req.body;
+
+//     try{
+//         const ALLOWED_UPDATES = ["photoUrl", "about", "gender", "age", "skills"];
+
+//         const isUpdateAllowed = Object.keys(data).every((k) => 
+//             ALLOWED_UPDATES.includes(k)
+//         );
+    
+//         if(!isUpdateAllowed){
+//             throw new Error("update is not allowed");
+//         }
+//         if(data?.skills.length > 10){
+//             throw new Error("skills can't be more than 10");
+//         }
+//         const user = await User.findByIdAndUpdate({_id : userId}, data, {returnDocument : "before", runValidators: true}); //this function will log the older version of the document
+//         res.send("user updated successfully!!");
+//     }catch(err){
+//         res.status(400).send("Update failed" + err.message);
+//     }
+// });
+// //update using emailID
+// app.patch("/userem", async (req, res) => {
+//     const userEmail = req.body.userEmail;
+//     const userData = req.body;
+//     try{
+//         const user = await User.findOneAndUpdate({emailId: userEmail}, userData, {returnDocument : 'before', runValidators: true});
+//         res.send("user updated successfully");
+//     }catch(err){
+//         res.status(400).send("something went wrong!!");
+//     }
+// })
+
+
 //db connection check
 connectDB().then(()=>{
     console.log("Database connection established ...");
