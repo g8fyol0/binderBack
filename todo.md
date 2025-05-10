@@ -26,3 +26,6 @@ data sanitization  at api and schema level
 ---------------------------------------------------
 encrypting passwords -- bcrypt pakage and validate signup 
 
+___________________________________________________
+routing as middlewares express.router()s
+
