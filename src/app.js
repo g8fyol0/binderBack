@@ -1,12 +1,10 @@
 const express = require('express');
 const connectDB = require("./config/database");
 const app = express();
-const User = require("./models/user");
-const {validateSignUpData} = require("./utils/validation");
-const bcrypt = require("bcrypt");
 const cookieParser = require('cookie-parser');
-const jwt = require("jsonwebtoken");
-const {userAuth} = require("./middlewares/auth");
+
+
+
 
 //middleware to read json -> js object
 app.use(express.json()); //it will work for all routes automatically whenever json comes it will convert it to js object for all 
@@ -15,100 +13,15 @@ app.use(cookieParser());
 
 
 
-app.post("/signup", async (req, res)=>{
-    // console.log(req.body);
-    // const userObj = {
-    //     firstName : "test",
-    //     lastName : "first",
-    //     emailId : "testfirst@gmail.com",
-    //     password : "testfirst"
-    // }
-    //now creating instance of user Model which like a new document creating a new instance of UserModel
+//routes
+const authRouter = require("./routes/auth");
+const profileRouter = require('./routes/profile');
+const requestsRouter = require('./routes/request');
 
-    //now it's dynamic /signup api 
-
-    try{
-        //validting the data
-        validateSignUpData(req);
-        //encypt the password then save the user
-        const {firstName, lastName, emailId, password} = req.body;
-        const passwordHash = await bcrypt.hash(password, 10);
-        // console.log(passwordHash);
-
-
-        const user = new User({firstName, lastName, emailId, password: passwordHash,});
-        await user.save(); //database will be saved
-        res.send("user added successfully");
-    }catch(err){
-        res.status(400).send("Error saving the user : " + err.message);
-    }
-})
-
-app.post("/login", async (req, res) => {
-
-    try{
-        const {emailId, password} = req.body;
-        // if(!validator.isEmail(emailId)){
-        //     throw new Error("email id is invalid!!");
-        // }
-        //check wheterh user is present or not
-        const user = await User.findOne({emailId: emailId});
-        if(!user){
-            // throw new Error("EmailId is not present in DB"); //don't leak such DB information in DB
-            throw new Error("Invalid Credentials");
-        }
-        const isPasswordValid = await user.validatePassword(password);  //offloaded to schema method
-        if(isPasswordValid){
-            // res.cookie("token", "somerandomtokenaddedtocookie");
-            // generating token 
-            //offloaded the jwt token generation to schema methods
-            const token = await user.getJWT();
-
-            res.cookie("token", token, {expires: new Date(Date.now() + 8 * 3600000)}); //we can set cookie expire
-            res.send("Login Successfull!!!");
-            //if password is valid then we will create a jwt token and add the token to cookie and send the response to the user
-
-        }else{
-            throw new Error("Invalid Credentials");
-        }
-
-    }catch(err){
-        res.status(400).send("Error saving the user : " + err.message);
-    }
-});
-
-app.get("/profile", userAuth, async (req, res)=>{
-    try{
-        const user = req.user;
-        res.send(user);
-        // console.log("logged in user is :: " + _id);  
-        // res.send("reading cookies");
-    }catch(err){
-        res.status(400).send("Error saving the user : " + err.message);
-    }
-})
-
-app.post("/sendConnectionRequest", userAuth, async (req, res)=>{
-    //sending connection request
-    const user = req.user;
-    console.log("sending a connection request");
-
-    res.send(user.firstName + " has sent a connection request!");
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//using these routers like middleware
+app.use("/", authRouter);
+app.use("/", profileRouter);
+app.use("/", requestsRouter);
 
 
 // app.get("/user",async (req, res)=>{
