@@ -36,7 +36,7 @@ profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
 
 //forgot password api
 profileRouter.patch("/profile/password", userAuth, async (req, res) => {
-
+    
 });
 
 

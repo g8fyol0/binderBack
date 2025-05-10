@@ -19,6 +19,8 @@
 -- status for a connection request (ignore, intrested, accepeted, rejected)
 -- POST /request/send/intrested/:userId
 -- POST /request/send/ignored/:userId
+
+-- both above combined = POST /request/send/:status/:userId
 -- POST /request/review/accepted/:requestId
 -- POST /request/review/rejected/:requestId
 
