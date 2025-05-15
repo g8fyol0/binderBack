@@ -1,6 +1,7 @@
 const express = require("express");
 const { userAuth } = require("../middlewares/auth");
 const ConnectionRequest = require("../models/connectionRequest");
+const User = require("../models/user");
 const userRouter = express.Router();
 
 const USER_SAFE_DATA = [
@@ -67,6 +68,51 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
   }
 });
 
-// now user feed api
+//FIXME now user feed api
 
+userRouter.get("/feed", userAuth, async (req, res) => {
+  try {
+    //TODO user should not see card of "sent request or interest " and ignored/accepted user for which entry has been made in "connectionRequest collection" and already connected user and his card himself
+    const loggedInUser = req.user;
+
+    const page = parseInt(req.query.page) || 1;
+    let limit = parseInt(req.query.limit) || 10;
+    limit = limit > 50 ? 50 : limit;
+
+    const skip = (page - 1) * limit;
+
+    //find all connection request sent + received
+    const connectionRequest = await ConnectionRequest.find({
+      $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
+    }).select("fromUserId toUserId");
+
+    //users to hide
+    const hideUsersFromFeed = new Set(); //contains only unique element if same item is pushed it will ignore
+    connectionRequest.forEach((req) => {
+      hideUsersFromFeed.add(req.fromUserId.toString());
+      hideUsersFromFeed.add(req.toUserId.toString());
+    });
+
+    // console.log(hideUsersFromFeed);
+
+    //users to show which are not present in hide
+    const users = await User.find({
+      $and: [
+        { _id: { $nin: Array.from(hideUsersFromFeed) } }, //not in
+        { _id: { $ne: loggedInUser._id } }, //not equal to
+      ],
+    })
+      .select(USER_SAFE_DATA)
+      .skip(skip)
+      .limit(limit);
+
+    //TODO pagination to vieww only 10 user at a time not all user
+
+    res.json({ data: users });
+  } catch (err) {
+    res.status(400).json({
+      message: err.message,
+    });
+  }
+});
 module.exports = userRouter;
