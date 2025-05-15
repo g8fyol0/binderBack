@@ -1,28 +1,24 @@
-const express = require('express');
+const express = require("express");
 const connectDB = require("./config/database");
 const app = express();
-const cookieParser = require('cookie-parser');
-
-
-
+const cookieParser = require("cookie-parser");
 
 //middleware to read json -> js object
-app.use(express.json()); //it will work for all routes automatically whenever json comes it will convert it to js object for all 
+app.use(express.json()); //it will work for all routes automatically whenever json comes it will convert it to js object for all
 //middleware to read cookie
 app.use(cookieParser());
 
-
-
 //routes
 const authRouter = require("./routes/auth");
-const profileRouter = require('./routes/profile');
-const requestsRouter = require('./routes/request');
+const profileRouter = require("./routes/profile");
+const requestsRouter = require("./routes/request");
+const userRouter = require("./routes/user");
 
 //using these routers like middleware
 app.use("/", authRouter);
 app.use("/", profileRouter);
 app.use("/", requestsRouter);
-
+app.use("/", userRouter);
 
 // app.get("/user",async (req, res)=>{
 //     const userEmail = req.body.emailId;
@@ -66,10 +62,10 @@ app.use("/", requestsRouter);
 //     try{
 //         const ALLOWED_UPDATES = ["photoUrl", "about", "gender", "age", "skills"];
 
-//         const isUpdateAllowed = Object.keys(data).every((k) => 
+//         const isUpdateAllowed = Object.keys(data).every((k) =>
 //             ALLOWED_UPDATES.includes(k)
 //         );
-    
+
 //         if(!isUpdateAllowed){
 //             throw new Error("update is not allowed");
 //         }
@@ -94,40 +90,32 @@ app.use("/", requestsRouter);
 //     }
 // })
 
-
 //db connection check
-connectDB().then(()=>{
+connectDB()
+  .then(() => {
     console.log("Database connection established ...");
-}).catch((err)=>{
+  })
+  .catch((err) => {
     console.error("Database can't be connected!" + err);
+  });
+
+app.listen(3000, () => {
+  console.log("server is listeing on port 3000 ...");
 });
 
-
-app.listen(3000, ()=> {
-    console.log("server is listeing on port 3000 ...");
-});
-
-
-//creating POST api for user 
-
-
-
-
-
-
-
+//creating POST api for user
 
 // const {adminAuth} = require("./middlewares");
 // const {adminAuth, userAuth} = require("./middlewares/auth")
-// handling the requests 
+// handling the requests
 // instead of app.use we will use app.get and app.post other method to handle different calls separetly
 // this will only handel get call to /user
 
-//mathes /user, /user/anything/anything 
+//mathes /user, /user/anything/anything
 //? is optional
-//+ abc abbbbc atleast 1 b 
+//+ abc abbbbc atleast 1 b
 //* ab*c any thing in between b and c basically we can put regex in here to match url
-// a(bc)+d atleast one bc in between 
+// a(bc)+d atleast one bc in between
 // app.get(/a(bc)+d/,(req, res)=>{
 //     res.send("? indicates optional");
 // })
@@ -160,11 +148,11 @@ app.listen(3000, ()=> {
 //     res.send("hello hello hello!");
 // })
 // app.use("/hello/2", (req, res)=>{
-    //this function is called route handler
+//this function is called route handler
 //     res.send("it will match /hello/2 ");
 // })
 // app.use("/nodemon",(req, res)=>{
-//     res.send("nodemon tested"); //if we don't write res.send() this will just create a infinite req hanging around 
+//     res.send("nodemon tested"); //if we don't write res.send() this will just create a infinite req hanging around
 // })
 
 // app.use("/user",
@@ -183,8 +171,8 @@ app.listen(3000, ()=> {
 //     //these all called middle wares and express will go through the chain of middleware
 
 //     // GET /user ==> it goes through middleware chain ==>> those function which actually handle the request is called request handler
-//     // why we need middleware 
-    
+//     // why we need middleware
+
 //     (req, res, next)=>{
 //         console.log("hanlding the route user 2");
 //         res.send("response2");
@@ -202,10 +190,10 @@ app.listen(3000, ()=> {
 // })
 
 // app.get("/admin/getAllData", (req, res)=>{
-//     //check if user is admin or not 
+//     //check if user is admin or not
 //     // const token = "xyz";
 //     // const isAdminAuthorized = token === "xyz";
-//     res.send("send all data");  
+//     res.send("send all data");
 
 // })
 // app.get("/admin/deleteUser", (req, res)=>{
@@ -221,8 +209,8 @@ app.listen(3000, ()=> {
 //     }
 // })
 // app.get("/getuserdata", (req, res)=>{
-//     // logic of db call and get user data 
-//     // but if there is some error in the code 
+//     // logic of db call and get user data
+//     // but if there is some error in the code
 //     throw new Error("error happend"); //error should not be exposed like this
 //     //try to write code in try and catch but still some unhandeled error
 
@@ -236,4 +224,3 @@ app.listen(3000, ()=> {
 //         res.status(500).send("something went wrong");
 //     }
 // })
-
