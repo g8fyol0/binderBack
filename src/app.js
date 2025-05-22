@@ -2,7 +2,14 @@ const express = require("express");
 const connectDB = require("./config/database");
 const app = express();
 const cookieParser = require("cookie-parser");
+const cors = require("cors");
 
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 //middleware to read json -> js object
 app.use(express.json()); //it will work for all routes automatically whenever json comes it will convert it to js object for all
 //middleware to read cookie
@@ -15,6 +22,7 @@ const requestsRouter = require("./routes/request");
 const userRouter = require("./routes/user");
 
 //using these routers like middleware
+
 app.use("/", authRouter);
 app.use("/", profileRouter);
 app.use("/", requestsRouter);
@@ -94,14 +102,13 @@ app.use("/", userRouter);
 connectDB()
   .then(() => {
     console.log("Database connection established ...");
+    app.listen(3000, () => {
+      console.log("server is listeing on port 3000 ...");
+    });
   })
   .catch((err) => {
     console.error("Database can't be connected!" + err);
   });
-
-app.listen(3000, () => {
-  console.log("server is listeing on port 3000 ...");
-});
 
 //creating POST api for user
 
