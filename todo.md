@@ -1,8 +1,3 @@
--init git
--git ignore
--repo creation
--push code
-
 - order of routes matter a lot
 
 - install postman and set it for our project
@@ -16,23 +11,17 @@
 
 ---
 
--- connection to mongo cluster using mongoose library
--- create userSchema and model (which provides us an interface to create documents or it's like a class whose instances are documents)
+-- connection to mongo
+
 -- /signup router
 
 ---
 
-data sanitization at api and schema level
--- use validator library to check email, password, url and other data inputs
--- don't trust REQ.BODY as it can contain malicious data
+## -- various other router setup
 
 ---
 
-encrypting passwords -- bcrypt pakage and validate signup
-
----
-
-## routing as middlewares express.router()s
+## routing express.router()s
 
 added connection request apis and indexing etc
 
@@ -40,14 +29,14 @@ added connection request apis and indexing etc
 
 ## -- post api is all about putting data in DB where attacker can really mess around
 
-creating link between two schema like user and other using "ref" keyword to create link between two collections ##populate and ref // like sql table references in join
+creating link between two schema like user and other c- link between two collections ##populate and ref // like sql table references in join
 
 -- user/request/received api done
 
 ---
 
 <!-- feed api done
-pagination -> only view 10 user at a time not send all the data at a time
+ -> only view 10 user at a time not send all the data at a time
 
 /feed?page=1&limit=10 -> gives first 10 users 1-10 .skip(0).limit(10)
 /feed?page=2&limit=10 -> gives user from 11-20 .skip(10).limit(10)

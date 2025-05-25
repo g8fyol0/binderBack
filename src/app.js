@@ -3,8 +3,10 @@ const connectDB = require("./config/database");
 const app = express();
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const http = require("http");
 
 require("dotenv").config();
+require("./utils/cronJob");
 
 app.use(
   cors({
@@ -22,6 +24,8 @@ const authRouter = require("./routes/auth");
 const profileRouter = require("./routes/profile");
 const requestsRouter = require("./routes/request");
 const userRouter = require("./routes/user");
+const initializeSocket = require("./utils/socket");
+const chatRouter = require("./routes/chat");
 
 //using these routers like middleware
 
@@ -29,6 +33,11 @@ app.use("/", authRouter);
 app.use("/", profileRouter);
 app.use("/", requestsRouter);
 app.use("/", userRouter);
+app.use("/", chatRouter);
+
+//creating server for websocket.io
+const server = http.createServer(app);
+initializeSocket(server);
 
 // app.get("/user",async (req, res)=>{
 //     const userEmail = req.body.emailId;
@@ -104,7 +113,7 @@ app.use("/", userRouter);
 connectDB()
   .then(() => {
     console.log("Database connection established ...");
-    app.listen(process.env.PORT, () => {
+    server.listen(process.env.PORT, () => {
       console.log("server is listeing on port 3000 ...");
     });
   })
