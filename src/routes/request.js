@@ -51,11 +51,11 @@ requestsRouter.post(
 
       const data = await connectionRequest.save();
 
-      const emailRes = await sendEmail.run(
-        "YOU got a new connection request from " + req.user.firstName,
-        req.user.firstName + " is " + status + " in " + toUser.firstName
-      );
-      console.log(emailRes);
+      // const emailRes = await sendEmail.run(
+      //   "YOU got a new connection request from " + req.user.firstName,
+      //   req.user.firstName + " is " + status + " in " + toUser.firstName
+      // );
+      // console.log(emailRes);
 
       res.json({
         message:
