@@ -69,44 +69,83 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
 });
 
 //FIXME now user feed api
+// Search users by firstName (case-insensitive, partial match)
+// Update the search endpoint to search by both first and last name
+userRouter.get("/user/search", userAuth, async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query) return res.status(400).json({ message: "Query is required" });
 
+    // Find all connection requests for the logged-in user
+    const loggedInUser = req.user;
+    const connectionRequests = await ConnectionRequest.find({
+      $or: [
+        { fromUserId: loggedInUser._id },
+        { toUserId: loggedInUser._id }
+      ]
+    }).select("fromUserId toUserId");
+
+    // Create a set of user IDs to exclude
+    const hideUsersFromResults = new Set();
+    connectionRequests.forEach((req) => {
+      hideUsersFromResults.add(req.fromUserId.toString());
+      hideUsersFromResults.add(req.toUserId.toString());
+    });
+    // Always exclude the logged-in user
+    hideUsersFromResults.add(loggedInUser._id.toString());
+
+    // Search for users by first or last name, excluding users with existing connections
+    const users = await User.find({
+      $and: [
+        { 
+          $or: [
+            { firstName: { $regex: query, $options: "i" } },
+            { lastName: { $regex: query, $options: "i" } }
+          ] 
+        },
+        { _id: { $nin: Array.from(hideUsersFromResults) } }
+      ]
+    }).select(USER_SAFE_DATA).limit(10);
+
+    res.json({ data: users });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Update the feed endpoint to ensure it always returns enough users
 userRouter.get("/feed", userAuth, async (req, res) => {
   try {
-    //TODO user should not see card of "sent request or interest " and ignored/accepted user for which entry has been made in "connectionRequest collection" and already connected user and his card himself
     const loggedInUser = req.user;
 
     const page = parseInt(req.query.page) || 1;
-    let limit = parseInt(req.query.limit) || 30;
+    let limit = parseInt(req.query.limit) || 10; // Default to 10 instead of 30
     limit = limit > 50 ? 50 : limit;
 
     const skip = (page - 1) * limit;
 
-    //find all connection request sent + received
+    // Find all connection requests sent + received
     const connectionRequest = await ConnectionRequest.find({
       $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
     }).select("fromUserId toUserId");
 
-    //users to hide
-    const hideUsersFromFeed = new Set(); //contains only unique element if same item is pushed it will ignore
+    // Users to hide
+    const hideUsersFromFeed = new Set();
     connectionRequest.forEach((req) => {
       hideUsersFromFeed.add(req.fromUserId.toString());
       hideUsersFromFeed.add(req.toUserId.toString());
     });
 
-    // console.log(hideUsersFromFeed);
+    // Always exclude the logged-in user
+    hideUsersFromFeed.add(loggedInUser._id.toString());
 
-    //users to show which are not present in hide
+    // Users to show which are not present in hide
     const users = await User.find({
-      $and: [
-        { _id: { $nin: Array.from(hideUsersFromFeed) } }, //not in
-        { _id: { $ne: loggedInUser._id } }, //not equal to
-      ],
+      _id: { $nin: Array.from(hideUsersFromFeed) }
     })
       .select(USER_SAFE_DATA)
       .skip(skip)
       .limit(limit);
-
-    //TODO pagination to vieww only 10 user at a time not all user
 
     res.json({ data: users });
   } catch (err) {
