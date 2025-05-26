@@ -75,37 +75,34 @@ userRouter.get("/user/search", userAuth, async (req, res) => {
     const { query } = req.query;
     if (!query) return res.status(400).json({ message: "Query is required" });
 
-    // Find all connection requests for the logged-in user
-    const loggedInUser = req.user;
+    const users = await User.find({
+      $or: [
+        { firstName: { $regex: query, $options: "i" } }, // 'i' for case-insensitive
+        { lastName: { $regex: query, $options: "i" } }
+      ],
+      // Don't show the logged-in user in search results
+      _id: { $ne: req.user._id }
+    }).select(USER_SAFE_DATA);
+
+    // Also filter out users that already have connection requests
     const connectionRequests = await ConnectionRequest.find({
       $or: [
-        { fromUserId: loggedInUser._id },
-        { toUserId: loggedInUser._id }
+        { fromUserId: req.user._id },
+        { toUserId: req.user._id }
       ]
     }).select("fromUserId toUserId");
 
-    // Create a set of user IDs to exclude
-    const hideUsersFromResults = new Set();
-    connectionRequests.forEach((req) => {
-      hideUsersFromResults.add(req.fromUserId.toString());
-      hideUsersFromResults.add(req.toUserId.toString());
+    const hideUserIds = new Set();
+    connectionRequests.forEach(req => {
+      hideUserIds.add(req.fromUserId.toString());
+      hideUserIds.add(req.toUserId.toString());
     });
 
-    // Search for users by first or last name, excluding the logged-in user and users with existing connections
-    const users = await User.find({
-      $and: [
-        { 
-          $or: [
-            { firstName: { $regex: query, $options: "i" } },
-            { lastName: { $regex: query, $options: "i" } }
-          ] 
-        },
-        { _id: { $nin: Array.from(hideUsersFromResults) } },
-        { _id: { $ne: loggedInUser._id } }
-      ]
-    }).select(USER_SAFE_DATA).limit(10);
+    const filteredUsers = users.filter(user => 
+      !hideUserIds.has(user._id.toString())
+    );
 
-    res.json({ data: users });
+    res.json({ data: filteredUsers });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
